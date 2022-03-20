@@ -185,7 +185,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
 
         audiopaths_sid_text_new = []
         lengths = []
-        for audiopath, sid, text in self.audiopaths_sid_text:
+        for audiopath, text, sid, _, _, _ in self.audiopaths_sid_text:
             if self.min_text_len <= len(text) and len(text) <= self.max_text_len:
                 audiopaths_sid_text_new.append([audiopath, sid, text])
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
@@ -208,8 +208,17 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
         audio_norm = audio / self.max_wav_value
         audio_norm = audio_norm.unsqueeze(0)
         spec_filename = filename.replace(".wav", ".spec.pt")
+        # print(os.path.exists(spec_filename), spec_filename)
         if os.path.exists(spec_filename):
-            spec = torch.load(spec_filename)
+            try:
+                spec = torch.load(spec_filename)
+            except:
+                # print("weird error", spec_filename)
+                spec = spectrogram_torch(audio_norm, self.filter_length,
+                    self.sampling_rate, self.hop_length, self.win_length,
+                    center=False)
+                spec = torch.squeeze(spec, 0)
+                torch.save(spec, spec_filename)
         else:
             spec = spectrogram_torch(audio_norm, self.filter_length,
                 self.sampling_rate, self.hop_length, self.win_length,

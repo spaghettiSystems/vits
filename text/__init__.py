@@ -45,10 +45,13 @@ def sequence_to_text(sequence):
   return result
 
 
-def _clean_text(text, cleaner_names):
+def _clean_text(text, cleaner_names, phonemizer=None):
   for name in cleaner_names:
     cleaner = getattr(cleaners, name)
     if not cleaner:
       raise Exception('Unknown cleaner: %s' % name)
-    text = cleaner(text)
+    if phonemizer is None:
+      from dp.phonemizer import Phonemizer
+      phonemizer = Phonemizer.from_checkpoint('/home/fsuser/PyCharmProjects/vits/en_us_cmudict_ipa_forward.pt')
+    text = cleaner(text, phonemizer)
   return text
